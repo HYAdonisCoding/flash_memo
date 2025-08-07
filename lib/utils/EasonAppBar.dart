@@ -94,7 +94,7 @@ class EasonAppBar extends StatelessWidget implements PreferredSizeWidget {
     final textColor = Colors.white;
     final iconColor = Colors.white;
 
-    final paddingTop = MediaQuery.of(context).padding.top;
+    final paddingTop = 44.0;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: gradient),
@@ -136,10 +136,7 @@ class EasonAppBar extends StatelessWidget implements PreferredSizeWidget {
                             color: item.iconColor ?? iconColor,
                             size: 22,
                           )
-                        : Text(
-                            item.title,
-                            style: TextStyle(color: textColor),
-                          ),
+                        : Text(item.title, style: TextStyle(color: textColor)),
                     onPressed: item.onTap,
                     splashRadius: 22,
                   );
@@ -154,7 +151,7 @@ class EasonAppBar extends StatelessWidget implements PreferredSizeWidget {
                   title,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                     shadows: [
