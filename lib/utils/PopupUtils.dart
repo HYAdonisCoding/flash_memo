@@ -22,14 +22,16 @@ class PopupUtils {
     final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
     final size = renderBox.size;
 
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final double popupWidth = isLandscape ? 240 : 180;
 
     // 计算弹窗位置
     final double screenWidth = overlay.size.width;
     double left = offset.dx + size.width / 2 - popupWidth / 2;
     if (left < 10) left = 10;
-    if (left + popupWidth > screenWidth - 10) left = screenWidth - popupWidth - 10;
+    if (left + popupWidth > screenWidth - 10)
+      left = screenWidth - popupWidth - 10;
 
     final double top = offset.dy + size.height + 5; // 距离按钮底部5px
     final double arrowLeft =
@@ -68,7 +70,9 @@ class PopupUtils {
                         color: surfaceColor,
                         borderRadius: BorderRadius.circular(12),
                         border: theme.brightness == Brightness.dark
-                            ? Border.all(color: theme.dividerColor.withOpacity(0.3))
+                            ? Border.all(
+                                color: theme.dividerColor.withOpacity(0.3),
+                              )
                             : null,
                         boxShadow: [
                           BoxShadow(
@@ -113,6 +117,13 @@ class PopupUtils {
     );
 
     Overlay.of(context).insert(_popupEntry!);
+  }
+
+  static void showContactUs(BuildContext context) {
+    // TODO: Implement contact us functionality
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('联系客服功能待实现')));
   }
 }
 

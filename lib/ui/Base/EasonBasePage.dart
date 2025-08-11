@@ -1,4 +1,5 @@
 import 'package:flash_memo/utils/EasonAppBar.dart';
+import 'package:flash_memo/utils/PopupUtils.dart';
 import 'package:flutter/material.dart';
 
 abstract class EasonBasePage extends StatefulWidget {
@@ -8,7 +9,24 @@ abstract class EasonBasePage extends StatefulWidget {
 
   /// 可选：定义右侧菜单按钮列表，默认返回 null。
   /// 子类如需展示 AppBar 右侧按钮，可重写此方法返回按钮列表。
-  List<EasonMenuItem>? menuItems(BuildContext context) => null;
+  List<EasonMenuItem>? menuItems(BuildContext context) => [
+    EasonMenuItem(
+      title: '回到首页',
+      icon: Icons.home,
+      iconColor: Colors.blue,
+      onTap: () {
+        Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+      },
+    ),
+    EasonMenuItem(
+      title: '联系客服',
+      icon: Icons.contact_support,
+      iconColor: Colors.green,
+      onTap: () {
+        PopupUtils.showContactUs(context);
+      },
+    ),
+  ];
 
   /// 可选：定义左侧菜单按钮列表，默认返回 null。
   /// 子类如需展示返回按钮或其他按钮，可重写此方法。

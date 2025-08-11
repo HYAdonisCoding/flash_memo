@@ -1,11 +1,17 @@
+import 'package:flash_memo/data/note_repository.dart';
 import 'package:flash_memo/ui/Base/GuidePage.dart';
 import 'package:flash_memo/ui/Base/WelcomePage.dart';
 import 'package:flash_memo/ui/Root/AppRootPage.dart';
+import 'package:flash_memo/ui/home/CreateNotePage.dart';
+import 'package:flash_memo/ui/home/NoteDetailPage.dart';
+import 'package:flash_memo/ui/home/NoteListPage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:async';
+import 'package:flash_memo/data/note_models.dart';
+import 'package:collection/collection.dart';
 
 const String kLastSeenVersion = 'last_seen_version';
 
@@ -28,14 +34,16 @@ Future<String> getInitialRoute() async {
   }
 }
 
-void main() {
+Future<void> main() async {
   // 建议调试阶段先设为 true，方便发现 Zone 错误
   BindingBase.debugZoneErrorsAreFatal = true;
 
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-
+      // 调用初始化方法，确保默认笔记本和默认笔记存在
+      final repo = NoteRepository();
+      await repo.initializeAppData();
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details);
         debugPrint('Flutter 异常捕获：${details.exception}');
@@ -85,6 +93,32 @@ class MyApp extends StatelessWidget {
             case '/home':
               final page = buildMainTabBarPage();
               return MaterialPageRoute(builder: (_) => page);
+            case '/note_detail':
+              if (settings.arguments is Note) {
+                final note = settings.arguments as Note;
+                return MaterialPageRoute(
+                  builder: (_) => NoteDetailPage(note: note),
+                );
+              } else {
+                return _buildFallbackRoute('无效的笔记参数');
+              }
+            case '/note_list':
+              if (settings.arguments is NoteCategory) {
+                final notebook = settings.arguments as NoteCategory;
+                return MaterialPageRoute(
+                  builder: (_) => NoteListPage(notebook: notebook),
+                );
+              } else {
+                return _buildFallbackRoute('无效的笔记本参数');
+              }
+            case '/create_note':
+              if (settings.arguments is Note) {
+                final note = settings.arguments as Note;
+                return MaterialPageRoute(
+                  builder: (_) => CreateNotePage(note: note),
+                );
+              }
+              return MaterialPageRoute(builder: (_) => CreateNotePage());
             default:
               return MaterialPageRoute(builder: (_) => const GuidePage());
           }
