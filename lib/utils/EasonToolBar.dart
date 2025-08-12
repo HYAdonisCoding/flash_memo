@@ -6,8 +6,7 @@ class EasonToolBar extends StatelessWidget {
   final void Function(int index)? onTap;
   final Map<int, GlobalKey>? keys; // 添加索引到Key的映射
 
-  const EasonToolBar({Key? key, required this.icons, this.onTap, this.keys})
-    : super(key: key);
+  const EasonToolBar({super.key, required this.icons, this.onTap, this.keys});
 
   @override
   Widget build(BuildContext context) {

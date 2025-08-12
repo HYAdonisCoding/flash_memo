@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class NoteDetailPage extends EasonBasePage {
   final Note note; // 笔记
 
-  const NoteDetailPage({Key? key, required this.note}) : super(key: key);
+  const NoteDetailPage({super.key, required this.note});
 
   @override
   String get title => 'NoteDetailPage';
@@ -16,8 +16,11 @@ class NoteDetailPage extends EasonBasePage {
   State<NoteDetailPage> createState() => _NoteDetailPageState();
 
   @override
-  menuItems(BuildContext context) {
-    return [
+  List<EasonMenuItem>? menuItems(BuildContext context) {
+    final items = super.menuItems(context) ?? <EasonMenuItem>[];
+    // 编辑和删除操作
+    // 添加编辑和删除按钮
+    items.insertAll(0, [
       EasonMenuItem(
         title: '编辑',
         icon: Icons.edit,
@@ -38,10 +41,11 @@ class NoteDetailPage extends EasonBasePage {
           // 删除笔记
           NoteRepository().deleteNote(note.id!);
           // 返回上一页 并刷新页面
-          Navigator.pop(context,  true);
+          Navigator.pop(context, true);
         },
       ),
-    ];
+    ]);
+    return items;
   }
 }
 

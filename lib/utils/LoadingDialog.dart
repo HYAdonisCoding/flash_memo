@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class LoadingDialog extends StatefulWidget {
   final String? message;
 
-  const LoadingDialog({Key? key, this.message}) : super(key: key);
+  const LoadingDialog({super.key, this.message});
 
   static bool _isShowing = false;
   static Timer? _timer;

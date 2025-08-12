@@ -3,7 +3,7 @@ import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flutter/material.dart';
 
 class TemplePage extends EasonBasePage {
-  const TemplePage({Key? key}) : super(key: key);
+  const TemplePage({super.key});
 
   @override
   String get title => 'TemplePage';

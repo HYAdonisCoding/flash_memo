@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flash_memo/data/note_models.dart';
 
 class HomePage extends EasonBasePage {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   String get title => 'HomePage';

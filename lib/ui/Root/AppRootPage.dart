@@ -33,12 +33,6 @@ Widget buildMainTabBarPage() {
     }
 
     final page = EasonTabBarPage(items: items);
-    if (page == null) {
-      debugPrint('EasonTabBarPage 返回了 null');
-      return Scaffold(
-        body: Center(child: Text('主页构建失败')),
-      );
-    }
 
     return page;
   } catch (e, stack) {

@@ -2,7 +2,7 @@ import 'package:flash_memo/data/note_repository.dart';
 import 'package:flash_memo/ui/Base/GuidePage.dart';
 import 'package:flash_memo/ui/Base/WelcomePage.dart';
 import 'package:flash_memo/ui/Root/AppRootPage.dart';
-import 'package:flash_memo/ui/home/CreateNotePage.dart';
+import 'package:flash_memo/ui/home/NoteEditPage.dart';
 import 'package:flash_memo/ui/home/NoteDetailPage.dart';
 import 'package:flash_memo/ui/home/NoteListPage.dart';
 import 'package:flutter/foundation.dart';
@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:async';
 import 'package:flash_memo/data/note_models.dart';
-import 'package:collection/collection.dart';
 
 const String kLastSeenVersion = 'last_seen_version';
 
@@ -115,10 +114,10 @@ class MyApp extends StatelessWidget {
               if (settings.arguments is Note) {
                 final note = settings.arguments as Note;
                 return MaterialPageRoute(
-                  builder: (_) => CreateNotePage(note: note),
+                  builder: (_) => NoteEditPage(note: note),
                 );
               }
-              return MaterialPageRoute(builder: (_) => CreateNotePage());
+              return MaterialPageRoute(builder: (_) => NoteEditPage());
             default:
               return MaterialPageRoute(builder: (_) => const GuidePage());
           }

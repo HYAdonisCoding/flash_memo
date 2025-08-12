@@ -2,7 +2,7 @@ import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flutter/material.dart';
 
 class SearchPage extends EasonBasePage {
-  const SearchPage({Key? key}) : super(key: key);
+  const SearchPage({super.key});
 
   @override
   String get title => 'SearchPage';

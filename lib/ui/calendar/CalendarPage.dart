@@ -2,7 +2,7 @@ import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flutter/material.dart';
 
 class CalendarPage extends EasonBasePage {
-  const CalendarPage({Key? key}) : super(key: key);
+  const CalendarPage({super.key});
 
   @override
   String get title => 'CalendarPage';

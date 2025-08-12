@@ -24,7 +24,7 @@ class EasonCupertinoTabBar extends StatelessWidget {
   final List<Color>? indicatorGradient;
 
   const EasonCupertinoTabBar({
-    Key? key,
+    super.key,
     required this.items,
     required this.currentIndex,
     required this.onTap,
@@ -33,7 +33,7 @@ class EasonCupertinoTabBar extends StatelessWidget {
     this.height = 56,
     this.indicatorHeight = 4,
     this.indicatorGradient,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

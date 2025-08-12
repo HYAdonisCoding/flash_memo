@@ -12,7 +12,7 @@ class EasonButton extends StatelessWidget {
   final BorderSide? border;
 
   const EasonButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.color,
@@ -22,7 +22,7 @@ class EasonButton extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     this.enabled = true,
     this.border,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

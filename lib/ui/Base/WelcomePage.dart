@@ -4,7 +4,7 @@ import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flash_memo/ui/Root/AppRootPage.dart';
 import 'package:flutter/material.dart';
 class WelcomePage extends EasonBasePage {
-  const WelcomePage({Key? key}) : super(key: key);
+  const WelcomePage({super.key});
 
   @override
   String get title => 'WelcomePage';
@@ -51,11 +51,6 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
   void _goToMainPage() {
     _animationController.stop();
     final mainPage = buildMainTabBarPage();
-    if (mainPage == null) {
-      debugPrint('⚠️ buildMainTabBarPage 返回 null，无法跳转');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('页面加载失败，请重启应用')));
-      return;
-    }
 
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => mainPage));
   }
@@ -74,38 +69,40 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
               end: Alignment.bottomRight,
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.flash_on, size: 100, color: Colors.white),
-              const SizedBox(height: 40),
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.white, Colors.yellowAccent],
-                ).createShader(bounds),
-                child: const Text(
-                  '欢迎来到 FlashMemo',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.flash_on, size: 100, color: Colors.white),
+                const SizedBox(height: 40),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Colors.white, Colors.yellowAccent],
+                  ).createShader(bounds),
+                  child: const Text(
+                    '欢迎来到 FlashMemo',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 340),
-              ElevatedButton(
-                onPressed: _goToMainPage,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Color(0xFF1D2671),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                const SizedBox(height: 340),
+                ElevatedButton(
+                  onPressed: _goToMainPage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Color(0xFF1D2671),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
+                  child: const Text('立即进入应用', style: TextStyle(fontSize: 18)),
                 ),
-                child: const Text('立即进入应用', style: TextStyle(fontSize: 18)),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         Positioned(

@@ -24,14 +24,14 @@ class EasonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<EasonMenuItem>? menuItems;
   final List<EasonMenuItem>? leadingMenuItems;
   EasonAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.showBack = true,
     this.onBack,
     this.gradientColors,
     this.menuItems,
     this.leadingMenuItems,
-  }) : super(key: key);
+  });
 
   static double getAppBarHeight(BuildContext context) {
     // 统一高度为 44 + 状态栏高度

@@ -8,7 +8,7 @@ import 'package:flash_memo/utils/EasonTabBar.dart';
 import 'package:flutter/material.dart';
 
 class GuidePage extends EasonBasePage {
-  const GuidePage({Key? key}) : super(key: key);
+  const GuidePage({super.key});
 
   @override
   String get title => 'GuidePage';

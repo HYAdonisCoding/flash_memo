@@ -25,7 +25,7 @@ class EasonTabBar extends StatelessWidget {
   final List<Color>? indicatorGradient;
 
   const EasonTabBar({
-    Key? key,
+    super.key,
     required this.items,
     required this.currentIndex,
     required this.onTap,
@@ -34,7 +34,7 @@ class EasonTabBar extends StatelessWidget {
     this.height = 56,
     this.indicatorHeight = 4,
     this.indicatorGradient,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -156,12 +156,12 @@ class EasonTabBarPage extends StatefulWidget {
   final double height;
 
   const EasonTabBarPage({
-    Key? key,
+    super.key,
     required this.items,
     this.activeColor = Colors.deepPurple,
     this.inactiveColor = Colors.grey,
     this.height = 56,
-  }) : super(key: key);
+  });
 
   @override
   State<EasonTabBarPage> createState() => _EasonTabBarPageState();

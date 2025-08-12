@@ -17,24 +17,22 @@ class NoteRepository {
     final noteId = await db.insert('notes', noteMap);
 
     // Insert tags and mappings
-    if (note.tags is List<String>) {
-      for (final tag in note.tags) {
-        // Insert tag if not exists
-        final tagRes = await db.query(
-          'tags',
-          where: 'name = ?',
-          whereArgs: [tag],
-          limit: 1,
-        );
-        int tagId;
-        if (tagRes.isEmpty) {
-          tagId = await db.insert('tags', {'name': tag});
-        } else {
-          tagId = tagRes.first['id'] as int;
-        }
-        // Insert into note_tags
-        await db.insert('note_tags', {'note_id': noteId, 'tag_id': tagId});
+    for (final tag in note.tags) {
+      // Insert tag if not exists
+      final tagRes = await db.query(
+        'tags',
+        where: 'name = ?',
+        whereArgs: [tag],
+        limit: 1,
+      );
+      int tagId;
+      if (tagRes.isEmpty) {
+        tagId = await db.insert('tags', {'name': tag});
+      } else {
+        tagId = tagRes.first['id'] as int;
       }
+      // Insert into note_tags
+      await db.insert('note_tags', {'note_id': noteId, 'tag_id': tagId});
     }
     return noteId;
   }
@@ -53,24 +51,22 @@ class NoteRepository {
     // Remove all existing mappings in note_tags
     await db.delete('note_tags', where: 'note_id = ?', whereArgs: [note.id]);
     // Re-insert mappings for current tags
-    if (note.tags is List<String>) {
-      for (final tag in note.tags) {
-        // Insert tag if not exists
-        final tagRes = await db.query(
-          'tags',
-          where: 'name = ?',
-          whereArgs: [tag],
-          limit: 1,
-        );
-        int tagId;
-        if (tagRes.isEmpty) {
-          tagId = await db.insert('tags', {'name': tag});
-        } else {
-          tagId = tagRes.first['id'] as int;
-        }
-        // Insert into note_tags
-        await db.insert('note_tags', {'note_id': note.id, 'tag_id': tagId});
+    for (final tag in note.tags) {
+      // Insert tag if not exists
+      final tagRes = await db.query(
+        'tags',
+        where: 'name = ?',
+        whereArgs: [tag],
+        limit: 1,
+      );
+      int tagId;
+      if (tagRes.isEmpty) {
+        tagId = await db.insert('tags', {'name': tag});
+      } else {
+        tagId = tagRes.first['id'] as int;
       }
+      // Insert into note_tags
+      await db.insert('note_tags', {'note_id': note.id, 'tag_id': tagId});
     }
     return result;
   }
@@ -103,7 +99,7 @@ class NoteRepository {
   /// 获取笔记列表的方法。
   ///
   /// 功能：从数据库中查询所有笔记，支持选择是否包含已删除的笔记。
-  /// 
+  ///
   /// 参数：
   /// - [includeDeleted]：是否包含已删除的笔记，默认为 false（即只返回未删除的笔记）。
   ///
@@ -396,5 +392,60 @@ And Ideas can Change the World.
       limit: 1,
     );
     return result.isNotEmpty;
+  }
+
+  /// 获取所有自定义标签（排除默认标签）
+  Future<List<String>> getAllCustomTags() async {
+    final db = await _dbHelper.database;
+    // 构造参数化占位符
+    final placeholders = List.filled(kDefaultTags.length, '?').join(',');
+    // 查询所有非默认标签的唯一名称
+    final result = await db.rawQuery('''
+      SELECT DISTINCT name FROM tags
+      WHERE name NOT IN ($placeholders)
+      ''', kDefaultTags);
+    return result.map((row) => row['name'] as String).toList();
+  }
+
+  /// 根据笔记ID查询其所有标签名称
+  Future<List<String>> getTagsByNoteId(int noteId) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery(
+      '''
+    SELECT t.name FROM tags t
+    INNER JOIN note_tags nt ON t.id = nt.tag_id
+    WHERE nt.note_id = ?
+  ''',
+      [noteId],
+    );
+
+    return result.map((row) => row['name'] as String).toList();
+  }
+
+  /// 更新指定笔记的标签（不修改内容）
+  /// [noteId]：要更新标签的笔记ID
+  /// [tags]：新的标签列表
+  Future<void> updateNoteTags(int noteId, List<String> tags) async {
+    final db = await _dbHelper.database;
+    // 删除该笔记的所有现有关联
+    await db.delete('note_tags', where: 'note_id = ?', whereArgs: [noteId]);
+    // 遍历新标签，插入tag和note_tags
+    for (final tag in tags) {
+      // 检查标签是否已存在
+      final tagRes = await db.query(
+        'tags',
+        where: 'name = ?',
+        whereArgs: [tag],
+        limit: 1,
+      );
+      int tagId;
+      if (tagRes.isEmpty) {
+        tagId = await db.insert('tags', {'name': tag});
+      } else {
+        tagId = tagRes.first['id'] as int;
+      }
+      // 插入note_tags映射
+      await db.insert('note_tags', {'note_id': noteId, 'tag_id': tagId});
+    }
   }
 }

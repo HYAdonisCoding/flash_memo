@@ -21,12 +21,12 @@ class EmptyView extends StatelessWidget {
   /// [icon] and [title] are required, [subtitle] and [onTap] are optional.
   /// [onTap] is called when the title text is tapped, if provided.
   const EmptyView({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     this.subtitle,
     this.onTap, // New optional onTap parameter
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

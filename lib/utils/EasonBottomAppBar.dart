@@ -14,11 +14,11 @@ class EasonBottomAppBar extends StatefulWidget {
   final Widget? rightWidget;
 
   const EasonBottomAppBar({
-    Key? key,
+    super.key,
     this.leftItems,
     this.onRightAction,
     this.rightWidget,
-  }) : super(key: key);
+  });
 
   @override
   State<EasonBottomAppBar> createState() => _EasonBottomAppBarState();

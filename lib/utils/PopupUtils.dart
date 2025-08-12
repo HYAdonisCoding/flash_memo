@@ -30,8 +30,9 @@ class PopupUtils {
     final double screenWidth = overlay.size.width;
     double left = offset.dx + size.width / 2 - popupWidth / 2;
     if (left < 10) left = 10;
-    if (left + popupWidth > screenWidth - 10)
+    if (left + popupWidth > screenWidth - 10) {
       left = screenWidth - popupWidth - 10;
+    }
 
     final double top = offset.dy + size.height + 5; // 距离按钮底部5px
     final double arrowLeft =
@@ -98,7 +99,7 @@ class PopupUtils {
                               onTap: () {
                                 _popupEntry?.remove();
                                 _popupEntry = null;
-                                item.onTap?.call();
+                                item.onTap.call();
                               },
                             ),
                             if (idx != items.length - 1)

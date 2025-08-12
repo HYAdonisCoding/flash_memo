@@ -3,7 +3,7 @@ import 'package:flash_memo/utils/PopupUtils.dart';
 import 'package:flutter/material.dart';
 
 abstract class EasonBasePage extends StatefulWidget {
-  const EasonBasePage({Key? key}) : super(key: key);
+  const EasonBasePage({super.key});
 
   String get title;
 
@@ -89,7 +89,7 @@ abstract class BasePageState<T extends EasonBasePage> extends State<T> {
   ///
   /// The page content is built by calling [buildContent] with the given
   /// [BuildContext].
-  /*******  e25797b7-f250-4886-b2f1-e1d0382bd127  *******/
+  /// *****  e25797b7-f250-4886-b2f1-e1d0382bd127  ******
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: widget.useCustomAppBar

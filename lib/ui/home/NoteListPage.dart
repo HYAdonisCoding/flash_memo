@@ -25,7 +25,8 @@ class NoteListPage extends EasonBasePage {
   List<EasonMenuItem>? menuItems(BuildContext context) {
     final items = super.menuItems(context) ?? <EasonMenuItem>[];
     // 批量删除笔记
-    items.add(
+    items.insert(
+      0,
       EasonMenuItem(
         title: '批量删除',
         icon: Icons.delete_sweep,
@@ -44,7 +45,8 @@ class NoteListPage extends EasonBasePage {
       // 如果是回收站，不显示新建笔记按钮
       return items;
     }
-    items.add(
+    items.insert(
+      0,
       EasonMenuItem(
         title: '新建笔记',
         icon: Icons.note_add,
