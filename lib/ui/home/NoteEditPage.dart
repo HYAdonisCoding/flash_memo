@@ -120,9 +120,21 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
 
   @override
   void dispose() {
+    _handleEmptyNoteCleanup();
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleEmptyNoteCleanup() async {
+    // 判断标题和内容是否均为空
+    final titleEmpty = _titleController.text.trim().isEmpty;
+    final contentEmpty = _contentController.text.trim().isEmpty;
+
+    if (titleEmpty && contentEmpty) {
+      // 调用硬删除删除空白笔记
+      await NoteRepository().hardDeleteNoteById(widget.note!.id!);
+    }
   }
 
   void saveNote() {

@@ -96,23 +96,27 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
 
   /// 从数据库异步获取指定笔记本的笔记列表
   Future<void> _loadNotes() async {
-    final notes = await fetchNotesByNotebook(widget.notebook.title);
+    try {
+      final notes = await fetchNotesByNotebook(widget.notebook.title);
 
-    // 一次性查出所有 tags
-    final noteIds = notes.map((n) => n.id!).toList();
-    final tagsMap = await NoteRepository().getTagsForNotes(noteIds);
+      // 一次性查出所有 tags
+      final noteIds = notes.map((n) => n.id!).toList();
+      final tagsMap = await NoteRepository().getTagsForNotes(noteIds);
 
-    for (var note in notes) {
-      note.tags = tagsMap[note.id] ?? [];
-    }
-
-    setState(() {
-      _notes = notes;
-      _loading = false;
-      if (_isBatchDeleteMode) {
-        _selectedNoteIds.clear();
+      for (var note in notes) {
+        note.tags = tagsMap[note.id] ?? [];
       }
-    });
+      if (!mounted) return;
+      setState(() {
+        _notes = notes;
+        _loading = false;
+        if (_isBatchDeleteMode) {
+          _selectedNoteIds.clear();
+        }
+      });
+    } catch (e) {
+      debugPrint('加载笔记失败: $e');
+    }
   }
 
   /// 调用仓库方法，获取指定笔记本名称的笔记列表
@@ -174,6 +178,7 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
         context,
         message: '成功删除$count条笔记',
         onComplete: () async {
+          if (!mounted) return;
           await _loadNotes();
         },
       );
@@ -210,7 +215,7 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _notes.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
+        separatorBuilder: (context, index) => const SizedBox(height: 5),
         itemBuilder: (context, index) {
           final note = _notes[index];
           return _isBatchDeleteMode
@@ -428,6 +433,36 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
     );
   }
 
+  Widget buildTag(String tag, Color cardColor) {
+    final brightness = ThemeData.estimateBrightnessForColor(cardColor);
+    final isLight = brightness == Brightness.light;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isLight
+            ? Colors.black.withOpacity(0.25)
+            : Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        tag,
+        style: TextStyle(
+          color: isLight ? Colors.white : Colors.black87,
+          fontSize: 14,
+          shadows: isLight
+              ? [
+                  Shadow(
+                    offset: Offset(0.5, 0.5),
+                    blurRadius: 1,
+                    color: Colors.black38,
+                  ),
+                ]
+              : null,
+        ),
+      ),
+    );
+  }
+
   /// 构建单个笔记卡片的UI
   Widget _buildNoteCard(Note note) {
     Color color;
@@ -499,7 +534,10 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
                       EasonMessenger.showSuccess(
                         scaffoldContext,
                         message: '笔记已删除',
-                        onComplete: () => state?._loadNotes(),
+                        onComplete: () async {
+                          if (!mounted) return;
+                          await _loadNotes();
+                        },
                       );
                     });
                   }
@@ -532,30 +570,30 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
             borderRadius: BorderRadius.circular(20),
           ),
           elevation: 8,
-          shadowColor: color.withOpacity(0.4),
+          shadowColor: color.withOpacity(0.3),
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
-                colors: [color.withOpacity(0.5), color.withOpacity(0.85)],
+                colors: [color.withOpacity(0.5), color.withOpacity(0.718)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   note.title,
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     shadows: [
                       Shadow(
-                        blurRadius: 3,
+                        blurRadius: 2,
                         color: Colors.black26,
                         offset: Offset(1, 1),
                       ),
@@ -565,29 +603,11 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (tags.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: tags.map((tag) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          tag,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    spacing: 6, // 减小横向间距
+                    runSpacing: 6, // 减小换行间距
+                    children: tags.map((tag) => buildTag(tag, color)).toList(),
                   ),
                 ],
               ],
