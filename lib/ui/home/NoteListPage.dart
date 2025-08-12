@@ -2,9 +2,13 @@ import 'package:flash_memo/data/note_models.dart';
 import 'package:flash_memo/data/note_repository.dart';
 import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flash_memo/ui/Base/empty_view.dart';
-import 'package:flash_memo/ui/home/NoteDetailPage.dart';
+import 'package:flash_memo/ui/home/NoteEditPage.dart';
+import 'package:flash_memo/ui/home/TagEditPage.dart';
 import 'package:flash_memo/utils/EasonAppBar.dart';
+import 'package:flash_memo/utils/EasonDialog.dart';
+import 'package:flash_memo/utils/EasonMessenger.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 /// 笔记列表页面，显示某个笔记本分类下的所有笔记
 class NoteListPage extends EasonBasePage {
@@ -35,7 +39,8 @@ class NoteListPage extends EasonBasePage {
           // 弹出批量删除对话框
 
           // 如果用户确认删除，执行删除操作
-          // ...
+          final state = NoteListPage.globalKey.currentState;
+          state?._enterBatchDeleteMode();
         },
       ),
     );
@@ -52,9 +57,12 @@ class NoteListPage extends EasonBasePage {
         icon: Icons.note_add,
         iconColor: Colors.green,
         onTap: () {
-          Navigator.pushNamed(context, '/create_note', arguments: null).then((
-            shouldRefresh,
-          ) {
+          // 传入当前的类型
+          Navigator.pushNamed(
+            context,
+            '/create_note',
+            arguments: notebook.title, // 传当前笔记本名称
+          ).then((shouldRefresh) {
             if (shouldRefresh == true) {
               // 如果新建笔记后需要刷新列表
               final state = NoteListPage.globalKey.currentState;
@@ -77,6 +85,9 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
   List<Note> _notes = []; // 笔记列表数据
   bool _loading = true; // 是否正在加载数据
 
+  bool _isBatchDeleteMode = false; // 是否处于批量删除模式
+  Set<int> _selectedNoteIds = {}; // 选中的笔记ID集合
+
   @override
   void initState() {
     super.initState();
@@ -86,9 +97,21 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
   /// 从数据库异步获取指定笔记本的笔记列表
   Future<void> _loadNotes() async {
     final notes = await fetchNotesByNotebook(widget.notebook.title);
+
+    // 一次性查出所有 tags
+    final noteIds = notes.map((n) => n.id!).toList();
+    final tagsMap = await NoteRepository().getTagsForNotes(noteIds);
+
+    for (var note in notes) {
+      note.tags = tagsMap[note.id] ?? [];
+    }
+
     setState(() {
-      _notes = notes; // 更新笔记数据
-      _loading = false; // 结束加载状态
+      _notes = notes;
+      _loading = false;
+      if (_isBatchDeleteMode) {
+        _selectedNoteIds.clear();
+      }
     });
   }
 
@@ -107,6 +130,54 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
     final repo = NoteRepository();
     final notes = await repo.getNotesByNotebookName(notebook);
     return notes;
+  }
+
+  void _enterBatchDeleteMode() {
+    setState(() {
+      _isBatchDeleteMode = true;
+      _selectedNoteIds.clear();
+    });
+  }
+
+  void _exitBatchDeleteMode() {
+    setState(() {
+      _isBatchDeleteMode = false;
+      _selectedNoteIds.clear();
+    });
+  }
+
+  Future<void> _batchDeleteSelectedNotes() async {
+    if (_selectedNoteIds.isEmpty) {
+      return;
+    }
+    int count = _selectedNoteIds.length;
+    final confirmed = await showCustomConfirmDialog(
+      context,
+      '确定要删除选中的$count条笔记吗？',
+    );
+    if (confirmed == true) {
+      final repo = NoteRepository();
+      final isRecycleBin = widget.notebook.title == '回收站';
+
+      for (var id in _selectedNoteIds) {
+        if (isRecycleBin) {
+          await repo.hardDeleteNoteById(id); // 回收站，硬删除
+        } else {
+          await repo.deleteNoteById(id); // 非回收站，软删除
+        }
+      }
+
+      _exitBatchDeleteMode();
+
+      if (!mounted) return;
+      EasonMessenger.showSuccess(
+        context,
+        message: '成功删除$count条笔记',
+        onComplete: () async {
+          await _loadNotes();
+        },
+      );
+    }
   }
 
   @override
@@ -134,8 +205,7 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
       );
     }
 
-    // 有笔记时显示笔记列表，支持滑动删除
-    return RefreshIndicator(
+    Widget listView = RefreshIndicator(
       onRefresh: _loadNotes,
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -143,50 +213,217 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final note = _notes[index];
-          return Dismissible(
-            key: Key(note.id.toString()), // 唯一Key，确保列表项可识别
-            direction: DismissDirection.endToStart, // 只允许向左滑动删除
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.redAccent, Colors.red],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
-              child: const Icon(Icons.delete, color: Colors.white, size: 28),
-            ),
-            onDismissed: (direction) async {
-              final deletedNote = _notes[index];
-              setState(() {
-                _notes.removeAt(index); // 删除UI列表项
-              });
-              final repo = NoteRepository();
-              await repo.deleteNoteById(deletedNote.id!); // 数据库软删除笔记
-
-              // 显示SnackBar，支持撤销删除操作
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('笔记已删除'),
-                  action: SnackBarAction(
-                    label: '撤销',
-                    onPressed: () async {
-                      final repo = NoteRepository();
-                      await repo.insertNote(deletedNote); // 重新插入笔记
-                      setState(() {
-                        _notes.insert(index, deletedNote); // 恢复UI列表
-                      });
-                    },
+          return _isBatchDeleteMode
+              ? _buildNoteCardWithCheckbox(note)
+              : Dismissible(
+                  key: Key(note.id.toString()), // 唯一Key，确保列表项可识别
+                  direction: DismissDirection.endToStart, // 只允许向左滑动删除
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.redAccent, Colors.red],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                    ),
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
-                ),
-              );
-            },
-            child: _buildNoteCard(note), // 构建单条笔记卡片
-          );
+                  onDismissed: (direction) async {
+                    final deletedNote = _notes[index];
+                    setState(() {
+                      _notes.removeAt(index); // 删除UI列表项
+                    });
+                    final repo = NoteRepository();
+                    await repo.deleteNoteById(deletedNote.id!); // 数据库软删除笔记
+
+                    // 显示SnackBar，支持撤销删除操作
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('笔记已删除'),
+                        action: SnackBarAction(
+                          label: '撤销',
+                          onPressed: () async {
+                            final repo = NoteRepository();
+                            await repo.insertNote(deletedNote); // 重新插入笔记
+                            setState(() {
+                              _notes.insert(index, deletedNote); // 恢复UI列表
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  child: _buildNoteCard(note), // 构建单条笔记卡片
+                );
         },
+      ),
+    );
+
+    if (_isBatchDeleteMode) {
+      return Stack(
+        children: [
+          Positioned.fill(child: listView),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBatchDeleteBar(),
+          ),
+        ],
+      );
+    } else {
+      return listView;
+    }
+  }
+
+  Widget _buildNoteCardWithCheckbox(Note note) {
+    Color color;
+    try {
+      color = Color(
+        int.parse('FF${note.color.replaceFirst('#', '')}', radix: 16),
+      );
+    } catch (_) {
+      color = Colors.blueAccent;
+    }
+
+    final tags = note.tags;
+    final isSelected = _selectedNoteIds.contains(note.id);
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedNoteIds.remove(note.id);
+          } else {
+            _selectedNoteIds.add(note.id!);
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(20),
+      splashColor: color.withOpacity(0.3),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 8,
+        shadowColor: color.withOpacity(0.4),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.5), color.withOpacity(0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Row(
+            children: [
+              Checkbox(
+                value: isSelected,
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      _selectedNoteIds.add(note.id!);
+                    } else {
+                      _selectedNoteIds.remove(note.id);
+                    }
+                  });
+                },
+                activeColor: Colors.white,
+                checkColor: color,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      note.title,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 3,
+                            color: Colors.black26,
+                            offset: Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (tags.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: tags.map((tag) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              tag,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBatchDeleteBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900.withOpacity(0.9),
+        boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 8)],
+      ),
+      child: Row(
+        children: [
+          Text(
+            '已选择 ${_selectedNoteIds.length} 条',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: _exitBatchDeleteMode,
+            child: const Text('取消', style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: _selectedNoteIds.isEmpty
+                ? null
+                : _batchDeleteSelectedNotes,
+            child: const Text('删除'),
+          ),
+        ],
       ),
     );
   }
@@ -204,80 +441,157 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
 
     final tags = note.tags;
 
-    return InkWell(
-      onTap: () async {
-        final shouldRefresh = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => NoteDetailPage(note: note)),
-        );
-        if (shouldRefresh == true) {
-          _loadNotes();
-        }
-      },
-      borderRadius: BorderRadius.circular(20),
-      splashColor: color.withOpacity(0.3),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        shadowColor: color.withOpacity(0.4),
-        child: Container(
-          width: double.infinity, // 关键：让卡片宽度撑满
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [color.withOpacity(0.5), color.withOpacity(0.85)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return Slidable(
+      key: Key(note.id.toString()),
+
+      // 定义右侧滑动按钮组
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        children: [
+          // 只有当笔记本不是“回收站”时才显示“标签”按钮
+          // 只有回收站以外才显示标签按钮
+          if (widget.notebook.title != '回收站')
+            SlidableAction(
+              onPressed: (context) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TagEditPage(note: note)),
+                ).then((shouldRefresh) {
+                  if (shouldRefresh == true) {
+                    final state = NoteListPage.globalKey.currentState;
+                    state?._loadNotes();
+                  }
+                });
+              },
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              icon: Icons.label,
+              label: '标签',
+              flex: 1, // 让标签按钮宽度灵活
             ),
+          SlidableAction(
+            onPressed: (context) async {
+              // 点击删除按钮，弹出确认对话框
+              String msg = '确定要删除这条笔记吗？';
+              if (note.isDeleted) {
+                //
+                msg = '确定要彻底删除这条笔记吗？';
+              }
+              showConfirmDialogWithCallback(
+                context,
+                msg,
+                onConfirm: () async {
+                  final repo = NoteRepository();
+                  if (note.isDeleted) {
+                    await repo.hardDeleteNoteById(note.id!);
+                  } else {
+                    await repo.deleteNoteById(note.id!);
+                  }
+
+                  final state = NoteListPage.globalKey.currentState;
+                  state?.setState(() {
+                    state._notes.removeWhere((n) => n.id == note.id);
+                  });
+
+                  final scaffoldContext = NoteListPage.globalKey.currentContext;
+                  if (scaffoldContext != null) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      EasonMessenger.showSuccess(
+                        scaffoldContext,
+                        message: '笔记已删除',
+                        onComplete: () => state?._loadNotes(),
+                      );
+                    });
+                  }
+                },
+              );
+            },
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: '删除',
+            flex: 1, // 限制宽度为1份，避免撑满
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                note.title,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 3,
-                      color: Colors.black26,
-                      offset: Offset(1, 1),
-                    ),
-                  ],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        ],
+      ),
+
+      child: InkWell(
+        onTap: () async {
+          final shouldRefresh = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => NoteEditPage(note: note)),
+          );
+          if (shouldRefresh == true) {
+            _loadNotes();
+          }
+        },
+        borderRadius: BorderRadius.circular(20),
+        splashColor: color.withOpacity(0.3),
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          shadowColor: color.withOpacity(0.4),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.5), color.withOpacity(0.85)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              if (tags.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: tags.map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  note.title,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 3,
+                        color: Colors.black26,
+                        offset: Offset(1, 1),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        tag,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                if (tags.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: tags.map((tag) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          tag,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

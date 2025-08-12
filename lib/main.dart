@@ -116,6 +116,11 @@ class MyApp extends StatelessWidget {
                 return MaterialPageRoute(
                   builder: (_) => NoteEditPage(note: note),
                 );
+              } else if (settings.arguments is String) {
+                final notebook = settings.arguments as String?;
+                return MaterialPageRoute(
+                  builder: (_) => NoteEditPage(notebook: notebook),
+                );
               }
               return MaterialPageRoute(builder: (_) => NoteEditPage());
             default:

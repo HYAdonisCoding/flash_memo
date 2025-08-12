@@ -8,7 +8,7 @@ import 'package:flash_memo/data/note_models.dart';
 class NoteRepository {
   final DBHelper _dbHelper = DBHelper.instance;
 
-  Future<int> insertNote(Note note) async {
+  Future<Note> insertNote(Note note) async {
     final db = await _dbHelper.database;
     // Insert note into 'notes' table (excluding tags)
     final noteMap = Map<String, dynamic>.from(note.toMap());
@@ -34,10 +34,34 @@ class NoteRepository {
       // Insert into note_tags
       await db.insert('note_tags', {'note_id': noteId, 'tag_id': tagId});
     }
-    return noteId;
+    // 根据noteId重新查询完整笔记，包含标签，返回
+    final noteList = await db.query(
+      'notes',
+      where: 'id = ?',
+      whereArgs: [noteId],
+      limit: 1,
+    );
+    if (noteList.isEmpty) {
+      throw Exception('Failed to fetch inserted note with id $noteId');
+    }
+    final noteMapFromDb = noteList.first;
+
+    // 查询该笔记的所有标签
+    final tagRows = await db.rawQuery(
+      '''
+    SELECT t.name FROM tags t
+    INNER JOIN note_tags nt ON nt.tag_id = t.id
+    WHERE nt.note_id = ?
+  ''',
+      [noteId],
+    );
+    final tags = tagRows.map((row) => row['name'] as String).toList();
+
+    // 构造Note对象并返回
+    return Note.fromMap({...noteMapFromDb, 'tags': tags});
   }
 
-  Future<int> updateNote(Note note) async {
+  Future<Note> updateNote(Note note) async {
     final db = await _dbHelper.database;
     // Update note in 'notes' table (excluding tags)
     final noteMap = Map<String, dynamic>.from(note.toMap());
@@ -68,11 +92,35 @@ class NoteRepository {
       // Insert into note_tags
       await db.insert('note_tags', {'note_id': note.id, 'tag_id': tagId});
     }
-    return result;
+    // 根据noteId重新查询完整笔记，包含标签，返回
+    final noteList = await db.query(
+      'notes',
+      where: 'id = ?',
+      whereArgs: [note.id],
+      limit: 1,
+    );
+    if (noteList.isEmpty) {
+      throw Exception('Failed to fetch inserted note with id $note.id');
+    }
+    final noteMapFromDb = noteList.first;
+
+    // 查询该笔记的所有标签
+    final tagRows = await db.rawQuery(
+      '''
+    SELECT t.name FROM tags t
+    INNER JOIN note_tags nt ON nt.tag_id = t.id
+    WHERE nt.note_id = ?
+  ''',
+      [note.id],
+    );
+    final tags = tagRows.map((row) => row['name'] as String).toList();
+
+    // 构造Note对象并返回
+    return Note.fromMap({...noteMapFromDb, 'tags': tags});
   }
 
   /// 保存笔记：有id则更新，无id则新增
-  Future<int> saveNote(Note note) async {
+  Future<Note> saveNote(Note note) async {
     if (note.id != null) {
       // 已存在笔记，执行更新
       return await updateNote(note);
@@ -138,7 +186,23 @@ class NoteRepository {
 
   // 获取回收站的笔记
   Future<List<Note>> getDeletedNotes() async {
-    return getNotes(includeDeleted: true);
+    final db = await _dbHelper.database;
+    final result = await db.query('notes', where: 'is_deleted = 1');
+
+    List<Note> notes = [];
+    for (final noteMap in result) {
+      final tagRows = await db.rawQuery(
+        '''
+      SELECT t.name FROM tags t
+      INNER JOIN note_tags nt ON nt.tag_id = t.id
+      WHERE nt.note_id = ?
+    ''',
+        [noteMap['id']],
+      );
+      final tags = tagRows.map((row) => row['name'] as String).toList();
+      notes.add(Note.fromMap({...noteMap, 'tags': tags}));
+    }
+    return notes;
   }
 
   /// 获取数据库中所有存在的笔记本名称（去重）
@@ -447,5 +511,29 @@ And Ideas can Change the World.
       // 插入note_tags映射
       await db.insert('note_tags', {'note_id': noteId, 'tag_id': tagId});
     }
+  }
+
+  /// 批量获取多个笔记的标签映射
+  /// 返回Map<noteId, List<tagName>>
+  Future<Map<int, List<String>>> getTagsForNotes(List<int> noteIds) async {
+    if (noteIds.isEmpty) {
+      return {};
+    }
+    final db = await _dbHelper.database;
+    // 构造占位符
+    final placeholders = List.filled(noteIds.length, '?').join(',');
+    final rows = await db.rawQuery('''
+      SELECT nt.note_id, t.name
+      FROM tags t
+      INNER JOIN note_tags nt ON nt.tag_id = t.id
+      WHERE nt.note_id IN ($placeholders)
+      ''', noteIds);
+    final Map<int, List<String>> tagMap = {};
+    for (final row in rows) {
+      final noteId = row['note_id'] as int;
+      final tagName = row['name'] as String;
+      tagMap.putIfAbsent(noteId, () => []).add(tagName);
+    }
+    return tagMap;
   }
 }

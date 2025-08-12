@@ -50,10 +50,10 @@ class EasonAppBar extends StatelessWidget implements PreferredSizeWidget {
             icon: Icons.home,
             iconColor: Colors.blue,
             onTap: () {
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).popUntil((route) => route.isFirst);
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/home', // 路由名，需注册到路由表
+                (route) => false, // 移除所有旧路由
+              );
             },
           ),
           EasonMenuItem(

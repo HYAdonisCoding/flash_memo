@@ -12,8 +12,10 @@ class NoteEditPage extends EasonBasePage {
       GlobalKey<_NoteEditPageState>();
   // 可选参数，传入已有笔记进行编辑
   // 如果是新建笔记则为 null
-  final Note? note;
-  NoteEditPage({Key? key, this.note}) : super(key: key ?? globalKey);
+  Note? note;
+  String? notebook; // 笔记本 可选参数
+  NoteEditPage({Key? key, this.note, this.notebook})
+    : super(key: key ?? globalKey);
 
   @override
   String get title => note == null ? '新建笔记' : '编辑笔记'; // 标题
@@ -62,17 +64,47 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
   ];
 
   bool get isEditing => widget.note != null;
+  bool _isInitialized = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    debugPrint("ModalRoute【笔记本】$args");
+  }
 
   @override
   void initState() {
     super.initState();
+    debugPrint('【笔记本】${widget.notebook} ');
     // 如果是编辑模式，初始化已有笔记数据
     if (isEditing) {
       _initEditData();
+      _isInitialized = true;
     } else {
-      _titleController = TextEditingController();
-      _contentController = TextEditingController();
+      _initNewNote();
     }
+  }
+
+  Future<void> _initNewNote() async {
+    final emptyNote = Note(
+      notebook: widget.notebook != null
+          ? widget.notebook!
+          : (kDefaultNotebooks.isNotEmpty ? kDefaultNotebooks[0] : '工作'),
+      title: '',
+      content: '',
+      tags: [],
+      color: _color,
+      isDeleted: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    final savedNote = await NoteRepository().saveNote(emptyNote);
+    setState(() {
+      widget.note = savedNote; // 这里是 Note 类型，避免类型错误
+      _initEditData();
+      _isInitialized = true;
+    });
   }
 
   void _initEditData() {
@@ -120,9 +152,7 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
     // 这里可以调用 NoteRepository 的方法保存笔记
     // 调用仓库保存newNote，保存成功后返回上一页
     NoteRepository().saveNote(newNote);
-    debugPrint('保存笔记：$newNote');
-
-    Navigator.of(context).pop(newNote);
+    Navigator.pop(context, true); // 表示需要刷新
   }
 
   Future<void> _refreshTags() async {
@@ -304,6 +334,9 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
 
   @override
   Widget buildContent(BuildContext context) {
+    if (!_isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Column(

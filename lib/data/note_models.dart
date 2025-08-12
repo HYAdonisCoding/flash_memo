@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class NoteCategory {
   final String title;
   final int noteCount;
@@ -85,5 +87,59 @@ class Note {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
+  }
+}
+class NotebookColors {
+  final Color backgroundStart;
+  final Color backgroundEnd;
+  final Color iconColor;
+
+  const NotebookColors(this.backgroundStart, this.backgroundEnd, this.iconColor);
+}
+
+NotebookColors getNotebookColors(String title) {
+  switch (title) {
+    case '工作':
+      return NotebookColors(
+        Colors.blue.shade700,
+        Colors.blue.shade400,
+        Colors.white,
+      );
+    case '学习':
+      return NotebookColors(
+        Colors.green.shade700,
+        Colors.green.shade400,
+        Colors.white,
+      );
+    case '梦想笔记本':
+      return NotebookColors(
+        Colors.purple.shade700,
+        Colors.purple.shade400,
+        Colors.white,
+      );
+    case '随笔':
+      return NotebookColors(
+        Colors.orange.shade700,
+        Colors.orange.shade400,
+        Colors.white,
+      );
+    case '人生大事记':
+      return NotebookColors(
+        Colors.red.shade700,
+        Colors.red.shade400,
+        Colors.white,
+      );
+    case '回收站':
+      return NotebookColors(
+        Colors.grey.shade700,
+        Colors.grey.shade400,
+        Colors.white,
+      );
+    default:
+      return NotebookColors(
+        Colors.blueGrey.shade700,
+        Colors.blueGrey.shade400,
+        Colors.white,
+      );
   }
 }

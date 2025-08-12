@@ -5,9 +5,9 @@ import 'package:flash_memo/utils/EasonAppBar.dart';
 import 'package:flutter/material.dart';
 
 class NoteDetailPage extends EasonBasePage {
-  final Note note; // 笔记
-
-  const NoteDetailPage({super.key, required this.note});
+  Note? note; // 笔记
+  String? notebook; // 笔记本 可选参数
+  NoteDetailPage({super.key, this.note, this.notebook});
 
   @override
   String get title => 'NoteDetailPage';
@@ -39,9 +39,14 @@ class NoteDetailPage extends EasonBasePage {
         iconColor: Colors.red,
         onTap: () {
           // 删除笔记
-          NoteRepository().deleteNote(note.id!);
-          // 返回上一页 并刷新页面
-          Navigator.pop(context, true);
+          if (note != null && note?.id != null) {
+            NoteRepository().deleteNote(note!.id!);
+            // 返回上一页 并刷新页面
+            Navigator.pop(context, true);
+          } else {
+            // 处理 id 为空的情况，比如日志或提示
+            debugPrint('警告：尝试删除的笔记 ID 为 null');
+          }
         },
       ),
     ]);
@@ -57,8 +62,8 @@ class _NoteDetailPageState extends BasePageState<NoteDetailPage> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.title);
-    _contentController = TextEditingController(text: widget.note.content);
+    _titleController = TextEditingController(text: widget.note?.title ?? '');
+    _contentController = TextEditingController(text: widget.note?.content ?? '');
   }
 
   @override
@@ -75,26 +80,28 @@ class _NoteDetailPageState extends BasePageState<NoteDetailPage> {
   }
 
   Widget _buildTags() {
-    if (widget.note.tags.isEmpty) return const SizedBox.shrink();
-    final baseColor = Color(
-      int.parse('FF${widget.note.color.replaceFirst('#', '')}', radix: 16),
-    );
+    final note = widget.note;
+    if (note == null || note.tags == null || note.tags!.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    return Chip(
-      label: Text(
-        widget.note.title,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: baseColor.withOpacity(0.7),
-      shadowColor: baseColor.withOpacity(0.5),
-      elevation: 2,
-    );
+    Color baseColor;
+    try {
+      final colorStr = note.color ?? '#2196F3'; // fallback color blue
+      baseColor = Color(int.parse('FF${colorStr.replaceFirst('#', '')}', radix: 16));
+    } catch (_) {
+      baseColor = Colors.blue;
+    }
+
     return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      children: widget.note.tags.map((tag) {
+      spacing: 6,
+      runSpacing: 6,
+      children: note.tags!.map((tag) {
         return Chip(
-          label: Text(tag, style: const TextStyle(color: Colors.white)),
+          label: Text(
+            tag,
+            style: const TextStyle(color: Colors.white),
+          ),
           backgroundColor: baseColor.withOpacity(0.7),
           shadowColor: baseColor.withOpacity(0.5),
           elevation: 2,
@@ -126,7 +133,7 @@ class _NoteDetailPageState extends BasePageState<NoteDetailPage> {
                   )
                 : SingleChildScrollView(
                     child: Text(
-                      widget.note.content,
+                      widget.note?.content ?? '',
                       style: const TextStyle(fontSize: 16, height: 1.5),
                     ),
                   ),

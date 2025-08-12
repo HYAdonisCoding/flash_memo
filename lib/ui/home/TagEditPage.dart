@@ -55,9 +55,19 @@ class _TagEditPageState extends BasePageState<TagEditPage> {
   Future<void> _loadMyTags() async {
     NoteRepository noteRepository = NoteRepository();
     List<String> tags = await noteRepository.getAllCustomTags();
+    if (widget.note.id == null) {
+      // 处理异常情况，比如直接返回空列表或提示
+      setState(() {
+        myTags = tags;
+        addedTags = [];
+      });
+      return;
+    }
+
     List<String> tagsAdded = await noteRepository.getTagsByNoteId(
       widget.note.id!,
     );
+
     setState(() {
       myTags = tags;
       addedTags = tagsAdded;

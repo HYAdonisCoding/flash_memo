@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flash_memo/ui/Root/AppRootPage.dart';
 import 'package:flutter/material.dart';
+
 class WelcomePage extends EasonBasePage {
   const WelcomePage({super.key});
 
@@ -19,7 +20,8 @@ class WelcomePage extends EasonBasePage {
   get useCustomAppBar => true;
 }
 
-class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderStateMixin {
+class _WelcomePageState extends BasePageState<WelcomePage>
+    with TickerProviderStateMixin {
   late final AnimationController _animationController;
   late final Timer _timer;
 
@@ -52,7 +54,9 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
     _animationController.stop();
     final mainPage = buildMainTabBarPage();
 
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => mainPage));
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => mainPage));
   }
 
   @override
@@ -73,7 +77,8 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.flash_on, size: 100, color: Colors.white),
+                const SizedBox(height: 200),
+                Icon(Icons.flash_on, size: 80, color: Colors.white),
                 const SizedBox(height: 40),
                 ShaderMask(
                   shaderCallback: (bounds) => const LinearGradient(
@@ -88,13 +93,16 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
                     ),
                   ),
                 ),
-                const SizedBox(height: 340),
+                const SizedBox(height: 240),
                 ElevatedButton(
                   onPressed: _goToMainPage,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Color(0xFF1D2671),
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -121,7 +129,9 @@ class _WelcomePageState extends BasePageState<WelcomePage> with TickerProviderSt
                       value: _animationController.value,
                       strokeWidth: 4,
                       backgroundColor: Colors.white24,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
                     ),
                   );
                 },

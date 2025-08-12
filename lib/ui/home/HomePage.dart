@@ -14,8 +14,6 @@ class HomePage extends EasonBasePage {
   bool get showBack => false;
   @override
   State<HomePage> createState() => _HomePageState();
-
-  
 }
 
 class _HomePageState extends BasePageState<HomePage> {
@@ -46,34 +44,151 @@ class _HomePageState extends BasePageState<HomePage> {
   }
 
   Widget _buildNoteCard(NoteCategory note) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          minVerticalPadding: 8,
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue,
-            radius: 18,
-            child: const Icon(Icons.book, color: Colors.white),
+    final colors = getNotebookColors(note.title);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            colors.backgroundStart.withOpacity(0.3),
+            colors.backgroundEnd.withOpacity(0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.backgroundStart.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-          title: Text(
-            note.title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            '${note.noteCount}笔记 · ${note.totalWords}字 · ${_formatDate(note.lastUpdated)}',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
-          trailing: Icon(Icons.chevron_right, color: Colors.grey[350]),
+        ],
+      ),
+      child: Card(
+        color: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // 跳转笔记列表页
             Navigator.pushNamed(context, '/note_list', arguments: note);
           },
+          // 统一左右内边距
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: Row(
+              children: [
+                // 左侧图标不加额外padding
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [colors.backgroundStart, colors.backgroundEnd],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.backgroundStart.withOpacity(0.5),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  // 把图标padding改成内边距
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    _getNotebookIcon(note).icon,
+                    color: colors.iconColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        note.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (note.noteCount > 0)
+                        Row(
+                          children: [
+                            _buildInfoItem('${note.noteCount}篇笔记'),
+                            _buildDot(),
+                            _buildInfoItem('${note.totalWords}字'),
+                            _buildDot(),
+                            _buildInfoItem(_formatDate(note.lastUpdated)),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                // 右侧箭头用 Padding 给右侧留白
+                Padding(
+                  padding: const EdgeInsets.only(right: 0),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey,
+                    size: 28,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+
+  Icon _getNotebookIcon(NoteCategory note) {
+    switch (note.title) {
+      case '工作':
+        return const Icon(Icons.work, color: Colors.white, size: 28);
+      case '学习':
+        return const Icon(Icons.school, color: Colors.white, size: 28);
+      case '梦想笔记本':
+        return const Icon(Icons.home, color: Colors.white, size: 28);
+      case '随笔':
+        return const Icon(Icons.note, color: Colors.white, size: 28);
+      case '人生大事记':
+        return const Icon(Icons.date_range, color: Colors.white, size: 28);
+      case '回收站':
+        return const Icon(Icons.delete_outline, color: Colors.white, size: 28);
+      default:
+        return const Icon(Icons.book, color: Colors.white, size: 28);
+    }
+  }
+
+  // 分隔小圆点
+  Widget _buildDot() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 13,
+        color: Colors.grey.shade600,
+        fontWeight: FontWeight.w500,
       ),
     );
   }
@@ -105,9 +220,9 @@ class _HomePageState extends BasePageState<HomePage> {
           }
           final notes = snapshot.data!;
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(10),
             itemCount: notes.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) => const SizedBox(height: 1),
             itemBuilder: (context, index) {
               final note = notes[index];
               return _buildNoteCard(note);
