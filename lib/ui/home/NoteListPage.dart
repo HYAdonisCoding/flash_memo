@@ -28,6 +28,23 @@ class NoteListPage extends EasonBasePage {
   @override
   List<EasonMenuItem>? menuItems(BuildContext context) {
     final items = super.menuItems(context) ?? <EasonMenuItem>[];
+    // 增加筛选
+    items.insert(
+      0,
+      EasonMenuItem(
+        title: '筛选',
+        icon: Icons.filter_list,
+        iconColor: Colors.blue,
+        onTap: () {
+          // 进入筛选页
+          final state = NoteListPage.globalKey.currentState;
+          final myNotesList = state?._notes;
+          final arguments = {'notes': myNotesList, 'notebook': notebook.title};
+          debugPrint('arguments: $arguments');
+          Navigator.pushNamed(context, '/note_filter', arguments: arguments);
+        },
+      ),
+    );
     // 批量删除笔记
     items.insert(
       0,
@@ -97,7 +114,7 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
   /// 从数据库异步获取指定笔记本的笔记列表
   Future<void> _loadNotes() async {
     try {
-      final notes = await fetchNotesByNotebook(widget.notebook.title);
+      final notes = await NoteRepository().fetchNotesByNotebook(widget.notebook.title);
 
       // 一次性查出所有 tags
       final noteIds = notes.map((n) => n.id!).toList();
@@ -119,22 +136,7 @@ class _NoteListPageState extends BasePageState<NoteListPage> {
     }
   }
 
-  /// 调用仓库方法，获取指定笔记本名称的笔记列表
-  Future<List<Note>> fetchNotesByNotebook(String notebook) async {
-    // 如果是所有笔记
-    if (notebook == '所有笔记') {
-      final repo = NoteRepository();
-      final notes = await repo.getAllNotes();
-      return notes;
-    } else if (notebook == '回收站') {
-      final repo = NoteRepository();
-      final notes = await repo.getDeletedNotes();
-      return notes;
-    }
-    final repo = NoteRepository();
-    final notes = await repo.getNotesByNotebookName(notebook);
-    return notes;
-  }
+  
 
   void _enterBatchDeleteMode() {
     setState(() {

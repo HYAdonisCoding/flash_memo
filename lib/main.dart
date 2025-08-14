@@ -3,7 +3,7 @@ import 'package:flash_memo/ui/Base/GuidePage.dart';
 import 'package:flash_memo/ui/Base/WelcomePage.dart';
 import 'package:flash_memo/ui/Root/AppRootPage.dart';
 import 'package:flash_memo/ui/home/NoteEditPage.dart';
-import 'package:flash_memo/ui/home/NoteDetailPage.dart';
+import 'package:flash_memo/ui/home/NoteFilterPage.dart';
 import 'package:flash_memo/ui/home/NoteListPage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -92,11 +92,28 @@ class MyApp extends StatelessWidget {
             case '/home':
               final page = buildMainTabBarPage();
               return MaterialPageRoute(builder: (_) => page);
-            case '/note_detail':
-              if (settings.arguments is Note) {
-                final note = settings.arguments as Note;
+            case '/note_filter':
+              if (settings.arguments is List<Note>) {
+                final notes = settings.arguments as List<Note>;
+                debugPrint('【笔记参数notes】$notes');
                 return MaterialPageRoute(
-                  builder: (_) => NoteDetailPage(note: note),
+                  builder: (_) => NoteFilterPage(notes: notes),
+                );
+              } else if (settings.arguments is String) {
+                final noteCategory = settings.arguments as String;
+                debugPrint('【笔记参数noteCategory】$noteCategory');
+                return MaterialPageRoute(
+                  builder: (_) => NoteFilterPage(notebook: noteCategory),
+                );
+              } else if (settings.arguments is Map) {
+                // 允许传 Map 来同时包含 notes 和 notebook
+                final args = settings.arguments as Map;
+                debugPrint('【笔记参数】$args');
+                return MaterialPageRoute(
+                  builder: (_) => NoteFilterPage(
+                    notes: args['notes'] as List<Note>?,
+                    notebook: args['notebook'] as String?,
+                  ),
                 );
               } else {
                 return _buildFallbackRoute('无效的笔记参数');

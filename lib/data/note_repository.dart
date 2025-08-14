@@ -130,6 +130,23 @@ class NoteRepository {
     }
   }
 
+  /// 调用仓库方法，获取指定笔记本名称的笔记列表
+  Future<List<Note>> fetchNotesByNotebook(String notebook) async {
+    // 如果是所有笔记
+    if (notebook == '所有笔记') {
+      final repo = NoteRepository();
+      final notes = await repo.getAllNotes();
+      return notes;
+    } else if (notebook == '回收站') {
+      final repo = NoteRepository();
+      final notes = await repo.getDeletedNotes();
+      return notes;
+    }
+    final repo = NoteRepository();
+    final notes = await repo.getNotesByNotebookName(notebook);
+    return notes;
+  }
+
   Future<int> deleteNote(int id) async {
     final db = await _dbHelper.database;
     // 软删除，更新is_deleted字段
