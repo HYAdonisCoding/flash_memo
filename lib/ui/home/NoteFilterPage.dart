@@ -258,147 +258,161 @@ class _NoteFilterPageState extends BasePageState<NoteFilterPage> {
       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
     );
     // Tag DropdownButton2
-    Widget tagDropdown = DropdownButton2<String>(
-      value: _selectedTag,
-      hint: Center(
-        child: Text(
-          '选择标签',
-          style: textStyle.copyWith(color: Colors.white),
-          textAlign: TextAlign.center,
+    Widget tagDropdown = Center(
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton2<String>(
+          value: _selectedTag,
+          hint: Center(
+            child: Text(
+              '选择标签',
+              style: textStyle.copyWith(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          iconStyleData: IconStyleData(
+            icon: Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white,
+              size: sizeIcon,
+            ),
+          ),
+          style: textStyle,
+          isExpanded: true,
+          buttonStyleData: ButtonStyleData(
+            height: 40,
+            width: btnWidth,
+            decoration: dropdownDecoration,
+            padding: EdgeInsets.zero,
+          ),
+          dropdownStyleData: DropdownStyleData(
+            maxHeight: dropdownMaxHeight,
+            decoration: dropdownDecoration,
+            elevation: 2,
+            offset: downOffset,
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: _availableTags.map((tag) {
+            return DropdownMenuItem<String>(
+              value: tag,
+              child: Center(child: Text(tag, style: textStyle)),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedTag = value;
+            });
+          },
         ),
       ),
-      iconStyleData: IconStyleData(
-        icon: Icon(
-          Icons.keyboard_arrow_down,
-          color: Colors.white,
-          size: sizeIcon,
-        ),
-      ),
-      style: textStyle,
-      isExpanded: true,
-      underline: const SizedBox(), // 关键：去掉灰色下划线
-      buttonStyleData: ButtonStyleData(
-        height: 40,
-        width: btnWidth,
-        decoration: dropdownDecoration,
-        padding: EdgeInsets.zero,
-      ),
-      dropdownStyleData: DropdownStyleData(
-        maxHeight: dropdownMaxHeight,
-        decoration: dropdownDecoration,
-        elevation: 2,
-        offset: downOffset,
-      ),
-      menuItemStyleData: MenuItemStyleData(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      items: _availableTags.map((tag) {
-        return DropdownMenuItem<String>(
-          value: tag,
-          child: Text(tag, style: textStyle),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedTag = value;
-        });
-      },
     );
+
     // Color DropdownButton2
-    Widget colorDropdown = DropdownButton2<Color>(
-      value: _selectedColor,
-      hint: Center(child: Text('选择颜色', style: textStyle)),
-      iconStyleData: IconStyleData(
-        icon: Icon(
-          Icons.keyboard_arrow_down,
-          color: Colors.white,
-          size: sizeIcon,
-        ),
-      ),
-      style: textStyle,
-      isExpanded: true,
-      underline: const SizedBox(), // 关键：去掉灰色下划线
-      buttonStyleData: ButtonStyleData(
-        height: 40,
-        width: btnWidth,
-        decoration: dropdownDecoration,
-        padding: EdgeInsets.zero,
-      ),
-      dropdownStyleData: DropdownStyleData(
-        maxHeight: dropdownMaxHeight,
-        decoration: dropdownDecoration,
-        elevation: 2,
-        offset: downOffset,
-      ),
-      menuItemStyleData: MenuItemStyleData(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      items: _availableColors.map((color) {
-        return DropdownMenuItem<Color>(
-          value: color,
-          child: Row(
-            children: [
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.shade300, width: 1),
+    Widget colorDropdown = Center(
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton2<Color>(
+          value: _selectedColor,
+          hint: Center(child: Text('选择颜色', style: textStyle)),
+          iconStyleData: IconStyleData(
+            icon: Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white,
+              size: sizeIcon,
+            ),
+          ),
+          style: textStyle,
+          isExpanded: true,
+          buttonStyleData: ButtonStyleData(
+            height: 40,
+            width: btnWidth,
+            decoration: dropdownDecoration,
+            padding: EdgeInsets.zero,
+          ),
+          dropdownStyleData: DropdownStyleData(
+            maxHeight: dropdownMaxHeight,
+            decoration: dropdownDecoration,
+            elevation: 2,
+            offset: downOffset,
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: _availableColors.map((color) {
+            return DropdownMenuItem<Color>(
+              value: color,
+              child: Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade300, width: 1),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedColor = value;
-        });
-      },
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedColor = value;
+            });
+          },
+        ),
+      ),
     );
+
     // Type DropdownButton2 (if needed)
     Widget? typeDropdown;
     if (widget.notebook == '所有笔记') {
-      typeDropdown = DropdownButton2<String>(
-        value: _selectedType,
-        hint: Center(child: Text('选择类型', style: textStyle)),
-        iconStyleData: IconStyleData(
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            color: Colors.white,
-            size: sizeIcon,
+      typeDropdown = Center(
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton2<String>(
+            value: _selectedType,
+            hint: Center(child: Text('选择类型', style: textStyle)),
+            iconStyleData: IconStyleData(
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white,
+                size: sizeIcon,
+              ),
+            ),
+            style: textStyle,
+            isExpanded: true,
+            buttonStyleData: ButtonStyleData(
+              height: 40,
+              width: btnWidth,
+              decoration: dropdownDecoration,
+              padding: EdgeInsets.zero,
+            ),
+            dropdownStyleData: DropdownStyleData(
+              maxHeight: dropdownMaxHeight,
+              decoration: dropdownDecoration,
+              elevation: 2,
+              offset: downOffset,
+            ),
+            menuItemStyleData: MenuItemStyleData(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: _availableTypes.map((type) {
+              return DropdownMenuItem<String>(
+                value: type,
+                child: Center(child: Text(type, style: textStyle)),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedType = value;
+              });
+            },
           ),
         ),
-        style: textStyle,
-        isExpanded: true,
-        underline: const SizedBox(), // 关键：去掉灰色下划线
-        buttonStyleData: ButtonStyleData(
-          height: 40,
-          width: btnWidth,
-          decoration: dropdownDecoration,
-          padding: EdgeInsets.zero,
-        ),
-        dropdownStyleData: DropdownStyleData(
-          maxHeight: dropdownMaxHeight,
-          decoration: dropdownDecoration,
-          elevation: 2,
-          offset: downOffset,
-        ),
-        menuItemStyleData: MenuItemStyleData(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-        items: _availableTypes.map((type) {
-          return DropdownMenuItem<String>(
-            value: type,
-            child: Text(type, style: textStyle),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            _selectedType = value;
-          });
-        },
       );
     }
     final height = 40.0;
@@ -630,16 +644,15 @@ class _NoteFilterPageState extends BasePageState<NoteFilterPage> {
     if (_filteredNotes.isEmpty) {
       return EmptyView(
         title: '暂无笔记',
-        subtitle: '你还没有创建任何笔记，赶快开始吧！',
+        subtitle: '赶快重置筛选条件吧！',
         icon: Icons.note_alt_outlined,
         onTap: () async {
-          final shouldRefresh = await Navigator.pushNamed(
-            context,
-            '/create_note',
-          );
-          if (shouldRefresh == true) {
-            await _fetchNotes(fromRepo: true);
-          }
+          _selectedTag = null;
+          _selectedColor = null;
+          _selectedType = null;
+          _selectedNoteIds.clear();
+          await _fetchNotes(fromRepo: true);
+          setState(() {});
         },
       );
     }
