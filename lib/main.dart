@@ -7,6 +7,7 @@ import 'package:flash_memo/ui/home/NoteFilterPage.dart';
 import 'package:flash_memo/ui/home/NoteListPage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:async';
@@ -80,6 +81,9 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode.system,
       initialRoute: initialRoute,
+      localizationsDelegates: const [
+        FlutterQuillLocalizations.delegate, // ✅ 必须加上
+      ],
       onGenerateRoute: (settings) {
         final routeName = settings.name ?? '/guide';
         debugPrint('【当前路由】$routeName');

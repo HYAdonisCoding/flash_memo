@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flash_memo/common/constants.dart';
 import 'package:flash_memo/data/note_models.dart';
 import 'package:flash_memo/data/note_repository.dart';
@@ -5,6 +7,7 @@ import 'package:flash_memo/ui/Base/EasonBasePage.dart';
 import 'package:flash_memo/utils/EasonAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flash_memo/ui/home/TagEditPage.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 
 class NoteEditPage extends EasonBasePage {
@@ -48,7 +51,8 @@ class NoteEditPage extends EasonBasePage {
 
 class _NoteEditPageState extends BasePageState<NoteEditPage> {
   late TextEditingController _titleController;
-  late TextEditingController _contentController;
+  final _toolbarScrollController = ScrollController();
+  late QuillController _contentController;
   List<String> _tags = [];
   String _color = '#2196F3'; // 默认蓝色
 
@@ -111,9 +115,22 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
     // 初始化编辑模式下的笔记数据
     _selectedNotebook = widget.note?.notebook ?? '工作';
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    _contentController = TextEditingController(
-      text: widget.note?.content ?? '',
-    );
+    _contentController = QuillController.basic();
+    // 如果 content 是 json 字符串（Delta）
+    try {
+      var myJSON = jsonDecode(widget.note?.content ?? '');
+      _contentController = QuillController(
+        document: Document.fromJson(myJSON),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    } catch (e) {
+      // 如果 content 是纯文本
+      _contentController = QuillController(
+        document: Document()..insert(0, widget.note?.content ?? ''),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    }
+
     _tags = widget.note?.tags.toList() ?? [];
     _color = widget.note?.color ?? _color;
   }
@@ -129,9 +146,9 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
   Future<void> _handleEmptyNoteCleanup() async {
     // 判断标题和内容是否均为空
     final titleEmpty = _titleController.text.trim().isEmpty;
-    final contentEmpty = _contentController.text.trim().isEmpty;
+    final isContentEmpty = _contentController.document.isEmpty();
 
-    if (titleEmpty && contentEmpty) {
+    if (titleEmpty && isContentEmpty) {
       // 调用硬删除删除空白笔记
       await NoteRepository().hardDeleteNoteById(widget.note!.id!);
     }
@@ -139,7 +156,10 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
 
   void saveNote() {
     final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
+    final contentJson = jsonEncode(
+      _contentController.document.toDelta().toJson(),
+    );
+
     if (title.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -152,7 +172,7 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
       id: widget.note?.id,
       notebook: _selectedNotebook,
       title: title,
-      content: content,
+      content: contentJson,
       tags: _tags,
       color: _color,
       isDeleted: false,
@@ -397,22 +417,33 @@ class _NoteEditPageState extends BasePageState<NoteEditPage> {
             maxLines: 1,
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: TextField(
-              controller: _contentController,
-              decoration: InputDecoration(
-                labelText: '内容',
-                border: OutlineInputBorder(
+          // 内容编辑区
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              QuillSimpleToolbar(
+                controller: _contentController,
+                config: const QuillSimpleToolbarConfig(
+                  multiRowsDisplay: false, // 👈 禁止多行换行
+                  showAlignmentButtons: true,
+                  
+                ),
+              ),
+
+              const SizedBox(height: 8),
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding: const EdgeInsets.all(12),
+                child: QuillEditor(
+                  controller: _contentController,
+                  scrollController: _toolbarScrollController,
+                  focusNode: FocusNode(),
+                ),
               ),
-              maxLines: null,
-              expands: true,
-              keyboardType: TextInputType.multiline,
-              textAlignVertical: TextAlignVertical.top,
-            ),
+            ],
           ),
           const SizedBox(height: 16),
           const Text(
