@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flash_memo/common/constants.dart';
 import 'package:flash_memo/data/db_helper.dart';
 import 'package:flash_memo/data/note_models.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// NoteRepository
 /// 负责笔记数据的增删改查（CRUD）及相关数据处理。
@@ -388,14 +394,63 @@ ORDER BY lastUpdated DESC
     return result;
   }
 
-  /// 硬删除笔记，彻底从数据库删除，不仅仅是软删除
+  /// 硬删除笔记，同时删除该笔记独占的图片文件
   Future<int> hardDeleteNoteById(int id) async {
     final db = await _dbHelper.database;
-    // 先删除关联的标签映射
+
+    // 1. 查询该笔记内容
+    final noteRes = await db.query(
+      'notes',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (noteRes.isEmpty) return 0;
+
+    final content = noteRes.first['content'] as String? ?? '';
+
+    // 2. 提取该笔记的所有图片路径
+    final imagePaths = _extractImagePathsFromContent(content);
+
+    // 3. 删除笔记标签映射
     await db.delete('note_tags', where: 'note_id = ?', whereArgs: [id]);
-    // 再删除笔记记录
+
+    // 4. 删除笔记记录
     final result = await db.delete('notes', where: 'id = ?', whereArgs: [id]);
+
+    // 5. 删除对应图片文件（不检查其他笔记引用）
+    final docs = await getApplicationDocumentsDirectory();
+    for (final path in imagePaths) {
+      try {
+        final file = File('${docs.path}/$path');
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        debugPrint('删除图片失败: $path, $e');
+      }
+    }
+
     return result;
+  }
+
+  /// 从 Delta JSON 中提取所有图片路径
+  List<String> _extractImagePathsFromContent(String content) {
+    try {
+      final data = jsonDecode(content);
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((e) => e['insert'])
+            .whereType<Map>()
+            .map((insert) => insert['image'])
+            .whereType<String>()
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('解析图片路径失败: $e');
+    }
+    return [];
   }
 
   Future<List<Note>> getNotesByNotebookName(String notebook) async {
